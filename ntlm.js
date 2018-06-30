@@ -77,6 +77,11 @@ function createType1Message(options){
 	var BODY_LENGTH = 40;
 
 	var type1flags = typeflags.NTLM_TYPE1_FLAGS;
+
+	// Set encoding flag to use OEM, remove unicode if set as it isn't supported
+	type1flags = type1flags - flags.NTLM_NegotiateUnicode;
+	type1flags = type1flags + flags.NTLM_NegotiateOEM;
+
 	if(!domain || domain === '')
 		type1flags = type1flags - flags.NTLM_NegotiateOemDomainSupplied;
 
@@ -100,9 +105,9 @@ function createType1Message(options){
 	buf.writeUInt16LE(workstation.length, pos); pos += 2; // workstation max length
 	buf.writeUInt32LE(BODY_LENGTH, pos); pos += 4; // workstation buffer offset
 
-	buf.writeUInt8(5, pos); pos += 1;      //ProductMajorVersion
+	buf.writeUInt8(6, pos); pos += 1;      //ProductMajorVersion
 	buf.writeUInt8(1, pos); pos += 1;      //ProductMinorVersion
-	buf.writeUInt16LE(2600, pos); pos += 2; //ProductBuild
+	buf.writeUInt16LE(7601, pos); pos += 2; //ProductBuild
 
 	buf.writeUInt8(0 , pos); pos += 1; //VersionReserved1
 	buf.writeUInt8(0 , pos); pos += 1; //VersionReserved2
