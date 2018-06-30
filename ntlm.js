@@ -67,6 +67,8 @@ var typeflags = {
 };
 
 function createType1Message(options){
+	// Known as the NEGOTIATE MESSAGE, from Client to Server
+	// Basing changes and modifications off of python module, ntlm-auth
 	var domain = escape(options.domain.toUpperCase());
 	var workstation = escape(options.workstation.toUpperCase());
 	var protocol = 'NTLMSSP\0';
@@ -76,6 +78,10 @@ function createType1Message(options){
 	var type1flags = typeflags.NTLM_TYPE1_FLAGS;
 	if(!domain || domain === '')
 		type1flags = type1flags - flags.NTLM_NegotiateOemDomainSupplied;
+
+	// Remove the workstation flag if not supplied
+	if(!workstation || workstation === '')
+		type1flags = type1flags - flags.NTLM_NegotiateOemWorkstationSupplied;
 
 	var pos = 0;
 	var buf = new Buffer(BODY_LENGTH + domain.length + workstation.length);
@@ -402,7 +408,3 @@ exports.parseType2Message = parseType2Message;
 exports.createType3Message = createType3Message;
 exports.create_NT_hashed_password = create_NT_hashed_password_v1;
 exports.create_LM_hashed_password = create_LM_hashed_password_v1;
-
-
-
-
