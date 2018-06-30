@@ -141,20 +141,28 @@ function parseType2Message(rawmsg, callback){
 		return null;
 	}
 
-	msg.targetNameLen = buf.readInt16LE(12);
-	msg.targetNameMaxLen = buf.readInt16LE(14);
-	msg.targetNameOffset = buf.readInt32LE(16);
-	msg.targetName  = buf.slice(msg.targetNameOffset, msg.targetNameOffset + msg.targetNameMaxLen);
-
   msg.negotiateFlags = buf.readInt32LE(20);
   msg.serverChallenge = buf.slice(24, 32);
   msg.reserved = buf.slice(32, 40);
+
+	if ((msg.negotiateFlags & flags.NTLM_NegotiateVersion) && (msg.negotiateFlags & flags.NTLM_NegotiateExtendedSecurity) && (Buffer.from(JSON.stringify(msg)).toString('base64'))) {
+		msg.version = buf.readDoubleLE(48);
+	}
+
+	if (msg.negotiateFlags & flags.NTLM_RequestTarget) {
+		msg.targetNameLen = buf.readInt16LE(12);
+		msg.targetNameMaxLen = buf.readInt16LE(14);
+		msg.targetNameOffset = buf.readInt32LE(16);
+		msg.targetNameOffsetMax = msg.targetNameOffset + msg.targetNameLen;
+		msg.targetName  = buf.slice(msg.targetNameOffset, msg.targetNameOffsetMax);
+	}
 
   if(msg.negotiateFlags & flags.NTLM_NegotiateTargetInfo){
   	msg.targetInfoLen = buf.readInt16LE(40);
   	msg.targetInfoMaxLen = buf.readInt16LE(42);
   	msg.targetInfoOffset = buf.readInt32LE(44);
-  	msg.targetInfo = buf.slice(msg.targetInfoOffset, msg.targetInfoOffset + msg.targetInfoLen);
+		msg.targetInfoOffsetMax = msg.targetInfoOffset + msg.targetInfoLen;
+  	msg.targetInfo = buf.slice(msg.targetInfoOffset, msg.targetInfoOffsetMax);
   }
 	return msg;
 }
