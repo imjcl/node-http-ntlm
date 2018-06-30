@@ -42,18 +42,19 @@ var flags = {
 	NTLM_NegotiateKeyExchange            :  0x40000000,
 	NTLM_Negotiate56                     :  0x80000000
 };
+
 var typeflags = {
-	NTLM_TYPE1_FLAGS : 	  flags.NTLM_NegotiateUnicode
-						+ flags.NTLM_NegotiateOEM
-						+ flags.NTLM_RequestTarget
-						+ flags.NTLM_NegotiateNTLM
-						+ flags.NTLM_NegotiateOemDomainSupplied
-						+ flags.NTLM_NegotiateOemWorkstationSupplied
-						+ flags.NTLM_NegotiateAlwaysSign
-						+ flags.NTLM_NegotiateExtendedSecurity
-						+ flags.NTLM_NegotiateVersion
+	NTLM_TYPE1_FLAGS : 	  flags.NTLM_NegotiateTargetInfo
 						+ flags.NTLM_Negotiate128
-						+ flags.NTLM_Negotiate56,
+						+ flags.NTLM_Negotiate56
+						+ flags.NTLM_NegotiateUnicode
+						+ flags.NTLM_NegotiateVersion
+						+ flags.NTLM_NegotiateKeyExchange
+						+ flags.NTLM_NegotiateAlwaysSign
+						+ flags.NTLM_NegotiateSign
+						+ flags.NTLM_NegotiateSeal
+						+ flags.NTLM_NTLM_NegotiateOemDomainSupplied
+						+ flags.NTLM_NegotiateOemWorkstationSupplied,
 
 	NTLM_TYPE2_FLAGS :    flags.NTLM_NegotiateUnicode
 						+ flags.NTLM_RequestTarget
