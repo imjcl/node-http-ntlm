@@ -146,16 +146,16 @@ function parseType2Message(rawmsg, callback){
 	msg.targetNameOffset = buf.readInt32LE(16);
 	msg.targetName  = buf.slice(msg.targetNameOffset, msg.targetNameOffset + msg.targetNameMaxLen);
 
-    msg.negotiateFlags = buf.readInt32LE(20);
-    msg.serverChallenge = buf.slice(24, 32);
-    msg.reserved = buf.slice(32, 40);
+  msg.negotiateFlags = buf.readInt32LE(20);
+  msg.serverChallenge = buf.slice(24, 32);
+  msg.reserved = buf.slice(32, 40);
 
-    if(msg.negotiateFlags & flags.NTLM_NegotiateTargetInfo){
-    	msg.targetInfoLen = buf.readInt16LE(40);
-    	msg.targetInfoMaxLen = buf.readInt16LE(42);
-    	msg.targetInfoOffset = buf.readInt32LE(44);
-    	msg.targetInfo = buf.slice(msg.targetInfoOffset, msg.targetInfoOffset + msg.targetInfoLen);
-    }
+  if(msg.negotiateFlags & flags.NTLM_NegotiateTargetInfo){
+  	msg.targetInfoLen = buf.readInt16LE(40);
+  	msg.targetInfoMaxLen = buf.readInt16LE(42);
+  	msg.targetInfoOffset = buf.readInt32LE(44);
+  	msg.targetInfo = buf.slice(msg.targetInfoOffset, msg.targetInfoOffset + msg.targetInfoLen);
+  }
 	return msg;
 }
 
