@@ -180,12 +180,16 @@ function createType3Message(msg2, options){
 
 	var BODY_LENGTH = 72;
 
+	var signature = 'NTLMSSP\0';
+	// Set message type?
+
 	var domainName = escape(options.domain.toUpperCase());
 	var workstation = escape(options.workstation.toUpperCase());
 
 	var workstationBytes, domainNameBytes, usernameBytes, encryptedRandomSessionKeyBytes;
 
 	var encryptedRandomSessionKey = "";
+
 	if(isUnicode){
 		workstationBytes = new Buffer(workstation, 'utf16le');
 		domainNameBytes = new Buffer(domainName, 'utf16le');
@@ -198,9 +202,68 @@ function createType3Message(msg2, options){
 		encryptedRandomSessionKeyBytes = new Buffer(encryptedRandomSessionKey, 'ascii');
 	}
 
-	var lmChallengeResponse = calc_resp((lm_password!=null)?lm_password:create_LM_hashed_password_v1(password), nonce);
-	var ntChallengeResponse = calc_resp((nt_password!=null)?nt_password:create_NT_hashed_password_v1(password), nonce);
+	// getLmChallengeResponse, only considering v2 since that is our use-case
+	let ntHash, challenge, lmHash, lmChallengeResponse;
+	var clientChallenge = crypto.randomBytes(8)
 
+	function ntowfv1(password) {
+		if (password.match(/^[a-fA-F\d]{32}:[a-fA-F\d]{32}$/) {
+			var ntHash = Buffer.from(password.split(':')[1], 'hex')
+			return ntHash;
+		}
+
+		var digest = crypto.createHash('md4').update(password, 'utf16le').digest();
+		return digest;
+	}
+
+	function ntowfv2(username, password, domainName) {
+		digest = ntowfv1(password);
+		user = new Buffer(username.toUpperCase() + domain_name, 'utf16le');
+		digest = crypto.createHmac('md5', digest).update(user).digest();
+
+		return digest;
+	}
+
+	ntHash = ntowfv2(username, password, domain_name);
+	challenge = msg2.serverChallenge + clientChallenge;
+	lmHash = crypto.createHmac('md5', ntHash).update(challenge).digest();
+	lmChallengeResponse = lmHash + clientChallenge;
+
+	let targetInfo, timestamp, ntChallengeResponse, sessionBaseKey;
+
+	if (msg2.targetInfo) {
+		targetInfo = msg2.targetInfo
+	}
+
+	if(targetInfo) {
+		timestamp = targetInfo[0x07]
+	} else {
+		let seconds_since_origin = 116444736000 + Math.floor(Date.now() / 1000);
+		timestamp = new Buffer().writeDoubleLE(seconds_since_origin * 10000000);
+	}
+
+	function getNTLMv2Temp(timestamp, clientChallenge, targetInfo) {
+		var resp_type = Buffer.from([0x01])
+		var hi_resp_type = Buffer.from([0x01])
+    var reserved1 = Buffer.from([0x00, 0x00])
+    var reserved2 = Buffer.from([0x00, 0x00, 0x00, 0x00])
+    var reserved3 = Buffer.from([0x00, 0x00, 0x00, 0x00])
+    var reserved4 = Buffer.from([0x00, 0x00, 0x00, 0x00])
+
+		var bufferArr = [resp_type, hi_resp_type, reserved1, reserved2, timestamp, clientChallenge, reserved3, Buffer.from(targetInfo), reserved4];
+		return Buffer.concat(bufferArr);
+	}
+
+	var temp = getNTLMv2Temp(timestamp, clientChallenge, targetInfo);
+	var ntProofStr = crypto.createHmac('md5', ntHash).update(msg2.serverChallenge + temp).digest();
+	ntChallengeResponse = nt_proof_str + temp;
+
+	sessionBaseKey = crypto.createHmac('md5', ntHash).update(ntProofStr).digest()
+
+	//var lmChallengeResponse = calc_resp((lm_password!=null)?lm_password:create_LM_hashed_password_v1(password), nonce);
+	//var ntChallengeResponse = calc_resp((nt_password!=null)?nt_password:create_NT_hashed_password_v1(password), nonce);
+
+	/*
 	if(isNegotiateExtendedSecurity){
 		var pwhash = (nt_password!=null)?nt_password:create_NT_hashed_password_v1(password);
 	 	var clientChallenge = "";
@@ -212,8 +275,7 @@ function createType3Message(msg2, options){
 	    lmChallengeResponse = challenges.lmChallengeResponse;
 	    ntChallengeResponse = challenges.ntChallengeResponse;
 	}
-
-	var signature = 'NTLMSSP\0';
+	*/
 
 	var pos = 0;
 	var buf = new Buffer(BODY_LENGTH + domainNameBytes.length + usernameBytes.length + workstationBytes.length + lmChallengeResponse.length + ntChallengeResponse.length + encryptedRandomSessionKeyBytes.length);
